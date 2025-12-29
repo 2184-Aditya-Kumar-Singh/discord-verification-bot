@@ -55,7 +55,7 @@ If you have questions, wait until verification is complete.
 // 🔹 2️⃣ DM when user gets the Verified role
 client.on("guildMemberUpdate", async (oldMember, newMember) => {
   // Check if Verified role was just added
-  const username = member.user.username;
+  const username = newMember.user.username;
   if (
     !oldMember.roles.cache.has(VERIFIED_ROLE_ID) &&
     newMember.roles.cache.has(VERIFIED_ROLE_ID)
