@@ -195,6 +195,7 @@ ${LINKS.verify}`
   }
 }, 2 * 60 * 60 * 1000); // every 2 hours
 
+
 // ==================================================
 // 4️⃣ DM Q&A SYSTEM
 // ==================================================
@@ -212,6 +213,79 @@ async function fetchDisplayNames(guild, ids) {
 
   return names.join("\n");
 }
+
+
+
+client.on("interactionCreate", async (interaction) => {
+  if (!interaction.isChatInputCommand()) return;
+
+  try {
+    // ⏱️ Tell Discord "I'm working"
+    await interaction.deferReply({ ephemeral: true });
+
+    const guild = interaction.guild;
+
+    if (interaction.commandName === "help") {
+      return interaction.editReply(
+`📘 **Kingdom 3961 Help**
+
+/verify – How to get verified  
+/fort – Fort status  
+/king – Current kings  
+/council – Council members  
+/ticket – Contact leadership`
+      );
+    }
+
+    if (interaction.commandName === "verify") {
+      return interaction.editReply(
+`✅ **Verification**
+Send your screenshot here:
+${LINKS.verify}`
+      );
+    }
+
+    if (interaction.commandName === "fort") {
+      return interaction.editReply(
+`🏰 **Fort Status**
+${LINKS.fort}`
+      );
+    }
+
+    if (interaction.commandName === "ticket") {
+      return interaction.editReply(
+`🎫 **Contact Leadership**
+${LINKS.ticket}`
+      );
+    }
+
+    if (interaction.commandName === "king") {
+      const kingNames = await fetchDisplayNames(guild, KING_IDS);
+      return interaction.editReply(
+`👑 **Current Kings**
+${kingNames}`
+      );
+    }
+
+    if (interaction.commandName === "council") {
+      const councilNames = await fetchDisplayNames(guild, COUNCIL_IDS);
+      return interaction.editReply(
+`🏛️ **Council Members**
+${councilNames}`
+      );
+    }
+
+  } catch (error) {
+    console.error("Slash command error:", error);
+
+    if (interaction.deferred) {
+      await interaction.editReply("❌ Something went wrong. Please try again.");
+    }
+  }
+});
+
+
+
 
 client.on("messageCreate", async (message) => {
   if (message.author.bot) return;
