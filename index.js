@@ -62,31 +62,31 @@ client.on("guildMemberUpdate", async (oldMember, newMember) => {
   ) {
     try {
       await newMember.send(
-`🎉 Congratulations ${username}!
+`**🎉 Congratulations ${username}!**
 You are now VERIFIED and have full access to the server.
 Please take a moment to familiarize yourself with the important channels below:
 
-🗣️ Kingdom Chat  
+**🗣️ Kingdom Chat**
 For kingdom-wide discussions and important updates.  
 https://discord.com/channels/1447945093410717790/1447945095037976731
 
-🎫 Ticket Channel  
+**🎫 Ticket Channel  **
 Use this channel to report issues, raise complaints, or contact staff.  
 https://discord.com/channels/1447945093410717790/1448391461719642262
 
-🏰 Fort Status  
+**🏰 Fort Status ** 
 Check current status of how many forts you did.  
 https://discord.com/channels/1447945093410717790/1448316740147744918
 
-💎 Resource Seller  
+**💎 Resource Seller  **
 For buying in-game resources.  
 https://discord.com/channels/1447945093410717790/1448391436247498802
 
-🛒 Account Buying  
+**🛒 Account Buying  **
 Use this channel for account buying/selling discussions (follow rules strictly).  
 https://discord.com/channels/1447945093410717790/1449084442319650826
 
-🧑‍✈️ Pilots  
+**🧑‍✈️ Pilots  **
 Find trusted pilots or offer piloting services as per kingdom rules.  
 https://discord.com/channels/1447945093410717790/1449084662839513231
 
