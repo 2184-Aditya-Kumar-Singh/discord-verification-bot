@@ -30,12 +30,12 @@ To ensure smooth coordination and discipline, please follow the steps below:
 
 **📜 Step 1: Read the Rules**
 Before participating, you must read and understand our rules.
-➡️ Rules Channel: https://discord.com/channels/1120417419358392370/1120417419823939676
+➡️ Rules Channel: https://discord.com/channels/1447945093410717790/1447962379718492284
 Failure to follow the rules may lead to warnings or removal.
 
 **✅ Step 2: Verification Required**
 To get full access to the server, you need to verify yourself.
-➡️ Verification Channel: 
+➡️ Verification Channel: https://discord.com/channels/1447945093410717790/1448330472361951333
 📸 Please send a screenshot/image of your in-game account as instructed.
 Once verified, you will receive the Verified role and unlock all alliance channels.
 
@@ -61,12 +61,38 @@ client.on("guildMemberUpdate", async (oldMember, newMember) => {
   ) {
     try {
       await newMember.send(
-`✅ You are now VERIFIED!
+`🎉 Congratulations ${username}!
+You are now VERIFIED and have full access to the server.
+Please take a moment to familiarize yourself with the important channels below:
 
-You now have full access to the server.
-Please follow alliance rules and leadership instructions at all times.
+🗣️ Kingdom Chat  
+For kingdom-wide discussions and important updates.  
+https://discord.com/channels/1447945093410717790/1447945095037976731
 
-Welcome officially 👑`
+🎫 Ticket Channel  
+Use this channel to report issues, raise complaints, or contact staff.  
+https://discord.com/channels/1447945093410717790/1448391461719642262
+
+🏰 Fort Status  
+Check current status of how many forts you did.  
+https://discord.com/channels/1447945093410717790/1448316740147744918
+
+💎 Resource Seller  
+For buying in-game resources.  
+https://discord.com/channels/1447945093410717790/1448391436247498802
+
+🛒 Account Buying  
+Use this channel for account buying/selling discussions (follow rules strictly).  
+https://discord.com/channels/1447945093410717790/1449084442319650826
+
+🧑‍✈️ Pilots  
+Find trusted pilots or offer piloting services as per kingdom rules.  
+https://discord.com/channels/1447945093410717790/1449084662839513231
+
+Please ensure you follow all alliance and kingdom rules while using these channels.
+
+Welcome officially, and fight with honor 👑  
+— Kingdom 3961 Leadership`
       );
     } catch (error) {
       console.log(`❌ Verified DM failed for ${newMember.user.tag}`);
