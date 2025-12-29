@@ -71,7 +71,7 @@ client.once("ready", async () => {
 
   await registerCommands(
     client.user.id,
-    "YOUR_GUILD_ID_HERE"
+    "1447945093410717790"
   );
 });
 
