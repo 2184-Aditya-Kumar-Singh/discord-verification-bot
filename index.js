@@ -218,7 +218,7 @@ client.on("messageCreate", async (message) => {
   const msg = message.content.toLowerCase();
 
   // Verification
-  if (msg.includes("verify")) {
+  if (msg.includes("verify")) || (msg.includes("verification")) {
     return message.channel.send(
 `✅ **How to Get Verified**
 Send your in-game account screenshot here:
@@ -229,7 +229,7 @@ ${LINKS.verify}`
   // Ticket / Leadership
   if (msg.includes("ticket") || msg.includes("leadership") || msg.includes("contact")) {
     return message.channel.send(
-`🎫 **Contact Leadership**
+`🎫 **Contact Leadership or For anything**
 Open a ticket here:
 ${LINKS.ticket}`
     );
