@@ -7,8 +7,9 @@ const client = new Client({
     GatewayIntentBits.DirectMessages,
     GatewayIntentBits.MessageContent
   ],
-  partials: ["CHANNEL", "USER"]
+  partials: ["CHANNEL", "USER", "MESSAGE"]
 });
+
 
 
 // ===================== CONFIG =====================
@@ -213,6 +214,18 @@ async function fetchDisplayNames(guild, ids) {
 }
 
 client.on("messageCreate", async (message) => {
+  if (message.partial) {
+    try {
+      await message.fetch();
+    } catch {
+      return;
+    }
+  }
+
+  if (message.author.bot) return;
+  if (message.guild) return;
+
+  const msg = message.content.toLowerCase();
   if (message.author.bot) return;
   if (message.guild) return;
 
