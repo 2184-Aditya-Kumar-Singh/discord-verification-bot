@@ -218,10 +218,7 @@ client.on("messageCreate", async (message) => {
   if (message.guild) return;
 
   const msg = message.content.toLowerCase();
-  if (message.author.bot) return;
-  if (message.guild) return;
 
-  const msg = message.content.toLowerCase();
 
   // Verification
   if (msg.includes("verify") || msg.includes("verification")) {
