@@ -1,4 +1,6 @@
 const { Client, GatewayIntentBits } = require("discord.js");
+const { registerCommands } = require("./commands");
+
 
 const client = new Client({
   intents: [
@@ -64,9 +66,15 @@ const joinTimes = new Map();
 // ==================================================
 
 // Ready
-client.once("ready", () => {
+client.once("ready", async () => {
   console.log(`✅ Logged in as ${client.user.tag}`);
+
+  await registerCommands(
+    client.user.id,
+    "YOUR_GUILD_ID_HERE"
+  );
 });
+
 
 // ==================================================
 // 1️⃣ WELCOME DM
