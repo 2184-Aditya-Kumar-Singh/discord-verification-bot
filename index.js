@@ -66,6 +66,11 @@ client.on("guildMemberUpdate", async (oldMember, newMember) => {
 You are now VERIFIED and have full access to the server.
 Please take a moment to familiarize yourself with the important channels below:
 
+**📢 Announcement Channel  **
+All important kingdom notices, war instructions, deadlines, and leadership announcements will be posted here.  
+⚠️ This channel is mandatory to follow.  
+https://discord.com/channels/1447945093410717790/1447962520026484736
+
 **🗣️ Kingdom Chat**
 For kingdom-wide discussions and important updates.  
 https://discord.com/channels/1447945093410717790/1447945095037976731
