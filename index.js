@@ -206,14 +206,6 @@ async function fetchDisplayNames(guild, ids) {
 }
 
 client.on("messageCreate", async (message) => {
-  if (message.partial) {
-    try {
-      await message.fetch();
-    } catch {
-      return;
-    }
-  }
-
   if (message.author.bot) return;
   if (message.guild) return;
 
