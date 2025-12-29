@@ -19,7 +19,7 @@ client.once("ready", () => {
 
 // 🔹 1️⃣ Welcome DM when user joins the server
 client.on("guildMemberAdd", async (member) => {
-  const username = member.user.username;
+  const username = member.user.displayName;
   try {
     await member.send(
 `**📩 Welcome & Verification Guidelines**
@@ -55,7 +55,7 @@ If you have questions, wait until verification is complete.
 // 🔹 2️⃣ DM when user gets the Verified role
 client.on("guildMemberUpdate", async (oldMember, newMember) => {
   // Check if Verified role was just added
-  const username = newMember.user.username;
+  const username = newMember.user.displayName;
   if (
     !oldMember.roles.cache.has(VERIFIED_ROLE_ID) &&
     newMember.roles.cache.has(VERIFIED_ROLE_ID)
