@@ -155,15 +155,7 @@ https://discord.com/channels/1447945093410717790/1449084662839513231
 
 Please ensure you follow all alliance and kingdom rules while using these channels.
 
-**Welcome officially, and feel free to ask me about** 
-• verification  
-• ticket / leadership  
-• king / council  
-• fort status  
-• resources  
-• announcements  
-Write only keyword
-
+Welcome Again,
 — Kingdom 3961 Leadership`
       );
     } catch {
