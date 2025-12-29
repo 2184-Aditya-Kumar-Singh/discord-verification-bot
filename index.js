@@ -7,8 +7,9 @@ const client = new Client({
     GatewayIntentBits.DirectMessages,
     GatewayIntentBits.MessageContent
   ],
-  partials: ["CHANNEL"]
+  partials: ["CHANNEL", "USER"]
 });
+
 
 // ===================== CONFIG =====================
 const VERIFIED_ROLE_ID = process.env.VERIFIED_ROLE_ID;
