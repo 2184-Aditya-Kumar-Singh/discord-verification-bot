@@ -17,6 +17,8 @@ const client = new Client({
 // ===================== CONFIG =====================
 const VERIFIED_ROLE_ID = process.env.VERIFIED_ROLE_ID;
 const BOT_TOKEN = process.env.BOT_TOKEN;
+const GUILD_ID = "1447945093410717790";
+
 
 // Channel Links
 const LINKS = {
