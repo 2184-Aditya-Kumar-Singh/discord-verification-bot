@@ -177,23 +177,42 @@ Welcome Again,
 // ==================================================
 setInterval(async () => {
   const now = Date.now();
+  const guild = client.guilds.cache.get(YOUR_GUILD_ID);
+  if (!guild) return;
 
   for (const [userId, joinedAt] of joinTimes.entries()) {
-    if (now - joinedAt >= 24 * 60 * 60 * 1000) {
-      try {
-        const user = await client.users.fetch(userId);
-        await user.send(
+
+    // Check 24 hours passed
+    if (now - joinedAt < 24 * 60 * 60 * 1000) continue;
+
+    let member;
+    try {
+      member = await guild.members.fetch(userId);
+    } catch {
+      continue; // user left server
+    }
+
+    // ✅ IMPORTANT: skip if already verified
+    if (member.roles.cache.has(VERIFIED_ROLE_ID)) {
+      joinTimes.delete(userId); // cleanup
+      continue;
+    }
+
+    try {
+      await member.send(
 `⏰ **Verification Reminder**
 
 You are still not verified.
 
 Please complete verification to avoid restrictions:
 ${LINKS.verify}`
-        );
-      } catch {}
+      );
+    } catch {
+      // DMs closed – ignore
     }
   }
 }, 2 * 60 * 60 * 1000); // every 2 hours
+
 
 
 // ==================================================
