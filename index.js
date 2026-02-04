@@ -291,11 +291,6 @@ return;
 
         await readingMsg.delete().catch(() => {});
 
-await message.channel.send(
-`✅ <@${member.id}> Verified successfully as **${prettyName}**
-🎉 Feel free to explore all channels.`
-);
-
 
         // ✅ Delete screenshot after successful verification
         await message.delete().catch(() => {});
@@ -314,6 +309,7 @@ await message.channel.send(
 );
 
 setTimeout(async () => {
+  await message.delete().catch(() => {});
   await failMsg.delete().catch(() => {});
 }, 15 * 60 * 500);
       }
