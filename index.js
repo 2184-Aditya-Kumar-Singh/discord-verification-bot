@@ -284,7 +284,7 @@ await message.channel.send(
 
         const logChannel = message.guild.channels.cache.get(guildConfig.logChannelId);
         if (logChannel) {
-          logChannel.send(`✅ ${member.user.tag} verified as ${prettyName}`);
+          logChannel.send(`✅ <@${member.id}> verified as ${prettyName}`);
         }
 
       } catch (err) {
