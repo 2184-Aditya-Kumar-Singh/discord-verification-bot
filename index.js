@@ -86,7 +86,7 @@ client.on("interactionCreate", async (interaction) => {
     await sendVerificationInstruction(interaction.guild, verifyChannel.id);
     return interaction.reply({
       content: "✅ Verification system setup successfully for this server!",
-      ephemeral: true
+      ephemeral: false
     });
   }
 });
