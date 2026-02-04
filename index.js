@@ -6,7 +6,6 @@ const path = require("path");
 const sharp = require("sharp");
 const pixelmatch = require("pixelmatch");
 const { PNG } = require("pngjs");
-const fetch = require("node-fetch");
 
 const client = new Client({
   intents: [
