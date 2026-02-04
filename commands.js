@@ -26,7 +26,6 @@ const commands = [
     .setName("ticket")
     .setDescription("Contact leadership / open ticket"),
 
-  // 🔥 SETUP COMMAND (Admin Only)
   new SlashCommandBuilder()
     .setName("setup")
     .setDescription("Setup verification system for this server")
@@ -34,27 +33,23 @@ const commands = [
     .addRoleOption(option =>
       option.setName("verified_role")
         .setDescription("Role to give after verification")
-        .setRequired(true)
-    )
+        .setRequired(true))
     .addChannelOption(option =>
       option.setName("verify_channel")
         .setDescription("Channel where users send screenshots")
-        .setRequired(true)
-    )
+        .setRequired(true))
     .addChannelOption(option =>
       option.setName("log_channel")
         .setDescription("Channel where verification logs are sent")
-        .setRequired(true)
-    )
+        .setRequired(true))
 
 ].map(cmd => cmd.toJSON());
 
 async function registerCommands(clientId, token) {
-
   const rest = new REST({ version: "10" }).setToken(token);
 
   await rest.put(
-    Routes.applicationCommands(clientId), // 🔥 GLOBAL COMMANDS
+    Routes.applicationCommands(clientId),
     { body: commands }
   );
 
