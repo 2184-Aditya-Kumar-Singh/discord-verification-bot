@@ -83,7 +83,7 @@ client.on("interactionCreate", async (interaction) => {
     };
 
     await fs.writeJson(CONFIG_PATH, configs, { spaces: 2 });
-
+    await sendVerificationInstruction(interaction.guild, verifyChannel.id);
     return interaction.reply({
       content: "✅ Verification system setup successfully for this server!",
       ephemeral: true
@@ -98,6 +98,40 @@ const allowedAlliances = [
   "astral shogun",
   "astral origin"
 ];
+async function sendVerificationInstruction(guild, channelId) {
+
+  const guildConfig = configs[guild.id];
+  if (!guildConfig) return;
+
+  const channel = guild.channels.cache.get(channelId);
+  if (!channel) return;
+
+  // Delete previous instruction message if exists
+  if (guildConfig.instructionMessageId) {
+    try {
+      const oldMsg = await channel.messages.fetch(guildConfig.instructionMessageId);
+      if (oldMsg) await oldMsg.delete();
+    } catch {}
+  }
+
+  const newMsg = await channel.send(
+`📌 **Verification Required**
+
+To get verified, please send a **clear screenshot of your full in-game profile screen**.
+
+Make sure:
+• Alliance name is visible  
+• Bottom profile menu is visible  
+• Screenshot is not cropped  
+• Screenshot is clear and readable  
+
+Once verified, you will receive the Verified role automatically.`
+  );
+
+  guildConfig.instructionMessageId = newMsg.id;
+  await fs.writeJson(CONFIG_PATH, configs, { spaces: 2 });
+}
+
 
 client.on("messageCreate", async (message) => {
 
@@ -107,6 +141,10 @@ client.on("messageCreate", async (message) => {
   if (message.guild) {
 
     const guildConfig = configs[message.guild.id];
+    if (guildConfig && message.channel.id === guildConfig.verifyChannelId && message.attachments.size === 0) {
+    await message.delete().catch(() => {});
+    return;
+  }
     if (guildConfig && message.channel.id === guildConfig.verifyChannelId && message.attachments.size > 0) {
 
       const attachment = message.attachments.first();
@@ -136,6 +174,7 @@ client.on("messageCreate", async (message) => {
         }
 
         if (!foundAlliance) {
+          await readingMsg.delete().catch(() => {});
           return message.reply("❌ Alliance not recognized. Make sure full profile screenshot is visible.");
         }
 
@@ -241,6 +280,7 @@ await message.channel.send(
 
         // ✅ Delete screenshot after successful verification
         await message.delete().catch(() => {});
+        await sendVerificationInstruction(message.guild, guildConfig.verifyChannelId);
 
         const logChannel = message.guild.channels.cache.get(guildConfig.logChannelId);
         if (logChannel) {
