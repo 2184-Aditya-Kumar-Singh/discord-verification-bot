@@ -3,9 +3,6 @@ const { registerCommands } = require("./commands");
 const Tesseract = require("tesseract.js");
 const fs = require("fs-extra");
 const path = require("path");
-const sharp = require("sharp");
-const pixelmatch = require("pixelmatch");
-const { PNG } = require("pngjs");
 
 const client = new Client({
   intents: [
@@ -64,56 +61,6 @@ client.once("ready", async () => {
   await registerCommands(client.user.id, BOT_TOKEN);
 });
 
-// ================= ICON CHECK =================
-async function checkForUIIcons(imageUrl) {
-  try {
-    const response = await fetch(imageUrl);
-    const buffer = Buffer.from(await response.arrayBuffer());
-
-    const screenshot = await sharp(buffer).resize(500).png().toBuffer();
-    const screenshotPNG = PNG.sync.read(screenshot);
-
-    const settingsIcon = PNG.sync.read(
-      await sharp("./assets/settings.png").resize(50).png().toBuffer()
-    );
-
-    const troopsIcon = PNG.sync.read(
-      await sharp("./assets/troops.png").resize(50).png().toBuffer()
-    );
-
-    const cropped = await sharp(buffer)
-      .extract({ left: 350, top: 350, width: 150, height: 150 })
-      .resize(50)
-      .png()
-      .toBuffer();
-
-    const croppedPNG = PNG.sync.read(cropped);
-
-    const diff1 = pixelmatch(
-      croppedPNG.data,
-      settingsIcon.data,
-      null,
-      settingsIcon.width,
-      settingsIcon.height,
-      { threshold: 0.2 }
-    );
-
-    const diff2 = pixelmatch(
-      croppedPNG.data,
-      troopsIcon.data,
-      null,
-      troopsIcon.width,
-      troopsIcon.height,
-      { threshold: 0.2 }
-    );
-
-    return diff1 < 500 || diff2 < 500;
-  } catch (err) {
-    console.error("Icon check error:", err);
-    return false;
-  }
-}
-
 // ================= SETUP COMMAND =================
 client.on("interactionCreate", async (interaction) => {
 
@@ -167,7 +114,7 @@ client.on("messageCreate", async (message) => {
 
       const member = await message.guild.members.fetch(message.author.id);
 
-      // If already verified
+      // If already verified → delete screenshot
       if (member.roles.cache.has(guildConfig.verifiedRoleId)) {
         await message.delete().catch(() => {});
         return message.channel.send("⚠️ You are already verified.");
@@ -191,10 +138,90 @@ client.on("messageCreate", async (message) => {
           return message.reply("❌ Alliance not recognized. Make sure full profile screenshot is visible.");
         }
 
-        const iconCheck = await checkForUIIcons(attachment.url);
-        if (!iconCheck) {
-          return message.reply("❌ Screenshot must clearly show the Settings or Troops icon.");
-        }
+        // ✅ NEW: UI TEXT CHECK (Stable Method)
+        // Normalize (remove accents for Latin languages)
+function normalize(text) {
+  return text
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+}
+
+const normalizedText = normalize(text);
+
+const requiredUIWords = [
+
+  // ---------- ENGLISH ----------
+  "troops",
+  "settings",
+
+  // ---------- FRENCH ----------
+  "troupes",
+  "reglages",
+  "succes",
+  "commandant",
+  "classements",
+
+  // ---------- GERMAN ----------
+  "truppen",
+  "einstellungen",
+
+  // ---------- SPANISH ----------
+  "tropas",
+  "configuracion",
+
+  // ---------- PORTUGUESE ----------
+  "tropas",
+  "configuracoes",
+
+  // ---------- INDONESIAN ----------
+  "pasukan",
+  "pengaturan",
+
+  // ---------- RUSSIAN ----------
+  "войска",        // troops
+  "настройки",     // settings
+
+  // ---------- VIETNAMESE ----------
+  "quan doi",      // troops
+  "cai dat",       // settings
+
+  // ---------- CHINESE (SIMPLIFIED) ----------
+  "部队",           // troops
+  "设置",           // settings
+
+  // ---------- CHINESE (TRADITIONAL) ----------
+  "部隊",
+  "設定",
+
+  // ---------- KOREAN ----------
+  "부대",           // troops
+  "설정",           // settings
+
+  // ---------- ITALIAN ----------
+  "truppe",
+  "impostazioni",
+
+  // ---------- TURKISH ----------
+  "birlikler",
+  "ayarlar"
+];
+
+let matchCount = 0;
+
+for (const word of requiredUIWords) {
+  if (normalizedText.includes(word)) {
+    matchCount++;
+  }
+}
+
+// Require at least 1 strong UI word
+if (matchCount < 1) {
+  return message.reply(
+    "❌ Screenshot must clearly show the bottom profile menu (Troops / Settings icons visible). If still showing issue then contact council."
+  );
+}
+
 
         await member.roles.add(guildConfig.verifiedRoleId);
 
@@ -208,6 +235,7 @@ client.on("messageCreate", async (message) => {
 🎉 Feel free to explore all channels.`
         );
 
+        // ✅ Delete screenshot after successful verification
         await message.delete().catch(() => {});
 
         const logChannel = message.guild.channels.cache.get(guildConfig.logChannelId);
@@ -293,6 +321,96 @@ You can ask about:
 Or ask here:
 ${LINKS.question}`
     );
+  }
+});
+
+// ================= WELCOME DM (UNCHANGED) =================
+client.on("guildMemberAdd", async (member) => {
+  const username = member.displayName;
+  joinTimes.set(member.id, Date.now());
+
+  try {
+    await member.send(`**📩 Welcome & Verification Guidelines**
+
+Hello **${username}**, Welcome to Kingdom 3961 Server 👋
+
+To ensure smooth coordination and discipline, please follow the steps below:
+
+**📜 Step 1: Read the Rules**
+Before participating, you must read and understand our rules.
+➡️ Rules Channel: https://discord.com/channels/1447945093410717790/1447962379718492284
+Failure to follow the rules may lead to warnings or removal.
+
+**✅ Step 2: Verification Required**
+To get full access to the server, you need to verify yourself.
+➡️ Verification Channel: https://discord.com/channels/1447945093410717790/1448330472361951333
+📸 Please send a screenshot/image of your in-game account as instructed.
+Once verified, you will receive the Verified role and unlock all alliance channels.
+
+**⚠️ Important Notes**
+• Do not DM staff unless instructed
+• Follow leadership directions at all times
+• Leaks, spying, or rule violations are strictly punished
+
+If you have questions, wait until verification is complete.
+— Kingdom 3961 Leadership`);
+  } catch {}
+});
+
+// ================= VERIFIED ROLE DM (UNCHANGED) =================
+client.on("guildMemberUpdate", async (oldMember, newMember) => {
+
+  const guildConfig = configs[newMember.guild.id];
+  if (!guildConfig) return;
+
+  if (
+    !oldMember.roles.cache.has(guildConfig.verifiedRoleId) &&
+    newMember.roles.cache.has(guildConfig.verifiedRoleId)
+  ) {
+
+    joinTimes.delete(newMember.id);
+
+    const username = newMember.displayName;
+
+    try {
+      await newMember.send(`**🎉 Congratulations ${username}!**
+You are now VERIFIED and have full access to the server.
+Please take a moment to familiarize yourself with the important channels below:
+
+**📢 Announcement Channel  **
+All important kingdom notices, war instructions, deadlines, and leadership announcements will be posted here.  
+⚠️ This channel is mandatory to follow.  
+https://discord.com/channels/1447945093410717790/1447962520026484736
+
+**🗣️ Kingdom Chat**
+For kingdom-wide discussions and important updates.  
+https://discord.com/channels/1447945093410717790/1447945095037976731
+
+**🎫 Ticket Channel  **
+Use this channel to report issues, raise complaints, or contact staff.  
+https://discord.com/channels/1447945093410717790/1448391461719642262
+
+**🏰 Fort Status ** 
+Check current status of how many forts you did.  
+https://discord.com/channels/1447945093410717790/1448316740147744918
+
+**💎 Resource Seller  **
+For buying in-game resources.  
+https://discord.com/channels/1447945093410717790/1448391436247498802
+
+**🛒 Account Buying  **
+Use this channel for account buying/selling discussions (follow rules strictly).  
+https://discord.com/channels/1447945093410717790/1449084442319650826
+
+**🧑‍✈️ Pilots  **
+Find trusted pilots or offer piloting services as per kingdom rules.  
+https://discord.com/channels/1447945093410717790/1449084662839513231
+
+Please ensure you follow all alliance and kingdom rules while using these channels.
+
+Welcome Again,
+— Kingdom 3961 Leadership`);
+    } catch {}
   }
 });
 
