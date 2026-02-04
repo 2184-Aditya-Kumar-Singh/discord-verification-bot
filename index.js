@@ -175,7 +175,18 @@ client.on("messageCreate", async (message) => {
 
         if (!foundAlliance) {
           await readingMsg.delete().catch(() => {});
-          return message.reply("❌ Alliance not recognized. Make sure full profile screenshot is visible.");
+          const failMsg = await message.reply(
+  `❌ <@${message.author.id}> Alliance not recognized.
+Make sure full profile screenshot is visible.`
+);
+
+// Delete both screenshot and failure message after 15 minutes
+setTimeout(async () => {
+  await message.delete().catch(() => {});
+  await failMsg.delete().catch(() => {});
+}, 15 * 60 * 600); // 15 minutes
+
+return;
         }
 
         // ✅ NEW: UI TEXT CHECK (Stable Method)
@@ -257,9 +268,17 @@ for (const word of requiredUIWords) {
 
 // Require at least 1 strong UI word
 if (matchCount < 1) {
-  return message.reply(
-    "❌ Screenshot must be clear, some elements are not visible/missing in your profile."
-  );
+  await readingMsg.delete().catch(() => {});
+ const failMsg = await message.reply(
+  `❌ <@${message.author.id}> Screenshot must clearly show the bottom profile menu (Troops / Settings icons visible).`
+);
+
+setTimeout(async () => {
+  await message.delete().catch(() => {});
+  await failMsg.delete().catch(() => {});
+}, 15 * 60 * 600);
+
+return;
 }
 
 
@@ -290,7 +309,13 @@ await message.channel.send(
       } catch (err) {
         console.error("OCR Error:", err);
         await readingMsg.delete().catch(() => {});
-        message.reply("⚠️ Error reading screenshot. Try again with clearer image.");
+        const failMsg = await message.reply(
+  `⚠️ <@${message.author.id}> Error reading screenshot. Try again with clearer image.`
+);
+
+setTimeout(async () => {
+  await failMsg.delete().catch(() => {});
+}, 15 * 60 * 500);
       }
     }
   }
