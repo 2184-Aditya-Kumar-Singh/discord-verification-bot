@@ -1,7 +1,7 @@
 {
   "name": "discord-verification-bot",
   "version": "1.0.0",
-  "description": "Discord bot for verification DMs",
+  "description": "Kingdom 3961 Bot",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
@@ -10,6 +10,8 @@
     "node": ">=18"
   },
   "dependencies": {
-    "discord.js": "^14.14.1"
+    "discord.js": "^14.14.1",
+    "tesseract.js": "^5.0.4",
+    "fs-extra": "^11.2.0"
   }
 }
