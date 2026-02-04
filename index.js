@@ -120,7 +120,8 @@ client.on("messageCreate", async (message) => {
         return message.channel.send("⚠️ You are already verified.");
       }
 
-      await message.reply("🔍 Reading screenshot... please wait (10-20 sec)");
+      const readingMsg = await message.reply("🔍 Reading screenshot... please wait (10-20 sec)");
+
 
       try {
         const result = await Tesseract.recognize(attachment.url, "eng");
@@ -218,7 +219,7 @@ for (const word of requiredUIWords) {
 // Require at least 1 strong UI word
 if (matchCount < 1) {
   return message.reply(
-    "❌ Screenshot must clearly show the bottom profile menu (Troops / Settings icons visible). If still showing issue then contact council."
+    "❌ Screenshot must be clear, some elements are not visible/missing in your profile."
   );
 }
 
@@ -230,10 +231,13 @@ if (matchCount < 1) {
           .map(w => w.charAt(0).toUpperCase() + w.slice(1))
           .join(" ");
 
-        await message.channel.send(
-`✅ Verified successfully as **${prettyName}**
+        await readingMsg.delete().catch(() => {});
+
+await message.channel.send(
+`✅ <@${member.id}> Verified successfully as **${prettyName}**
 🎉 Feel free to explore all channels.`
-        );
+);
+
 
         // ✅ Delete screenshot after successful verification
         await message.delete().catch(() => {});
@@ -245,6 +249,7 @@ if (matchCount < 1) {
 
       } catch (err) {
         console.error("OCR Error:", err);
+        await readingMsg.delete().catch(() => {});
         message.reply("⚠️ Error reading screenshot. Try again with clearer image.");
       }
     }
