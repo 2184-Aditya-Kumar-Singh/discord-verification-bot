@@ -1,496 +1,361 @@
-const { Client, GatewayIntentBits } = require("discord.js");
-const { registerCommands } = require("./commands");
-const Tesseract = require("tesseract.js");
+const {
+    Client,
+    GatewayIntentBits,
+    Partials,
+    PermissionsBitField,
+
+    ActionRowBuilder,
+    ButtonBuilder,
+    ButtonStyle,
+
+    ModalBuilder,
+    TextInputBuilder,
+    TextInputStyle,
+
+    Events
+} = require("discord.js");
+
 const fs = require("fs-extra");
 const path = require("path");
+const { registerCommands } = require("./commands");
 
 const client = new Client({
-  intents: [
-    GatewayIntentBits.Guilds,
-    GatewayIntentBits.GuildMembers,
-    GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.DirectMessages,
-    GatewayIntentBits.MessageContent
-  ],
-  partials: ["CHANNEL", "USER", "MESSAGE"]
+
+    intents: [
+
+        GatewayIntentBits.Guilds,
+        GatewayIntentBits.GuildMembers,
+        GatewayIntentBits.GuildMessages,
+        GatewayIntentBits.MessageContent
+
+    ],
+
+    partials: [
+        Partials.Channel
+    ]
+
 });
 
-const BOT_TOKEN = process.env.BOT_TOKEN;
-const CONFIG_PATH = path.join(__dirname, "config.json");
+const TOKEN = process.env.BOT_TOKEN;
 
-let configs = {};
-if (fs.existsSync(CONFIG_PATH)) {
-  configs = fs.readJsonSync(CONFIG_PATH);
+const CONFIG = path.join(__dirname, "config.json");
+
+let config = {};
+
+if (fs.existsSync(CONFIG)) {
+    config = fs.readJsonSync(CONFIG);
 }
-
-// ===================== CHANNEL LINKS =====================
-const LINKS = {
-  rules: "https://discord.com/channels/1447945093410717790/1447962379718492284",
-  verify: "https://discord.com/channels/1447945093410717790/1448330472361951333",
-  ticket: "https://discord.com/channels/1447945093410717790/1448391461719642262",
-  fort: "https://discord.com/channels/1447945093410717790/1448316740147744918",
-  announcement: "https://discord.com/channels/1447945093410717790/1447962520026484736",
-  kingdomChat: "https://discord.com/channels/1447945093410717790/1447945095037976731",
-  resource: "https://discord.com/channels/1447945093410717790/1448391436247498802",
-  suggestion: "https://discord.com/channels/1447945093410717790/1447966582818209853",
-  question: "https://discord.com/channels/1447945093410717790/1447967131991019690"
-};
-
-const KING_IDS = [
-  "537505308256370688",
-  "826581562891960341"
-];
-
-const COUNCIL_IDS = [
-  "826581562891960341",
-  "537505308256370688",
-  "1398965375781175418",
-  "888088767561347092",
-  "151495610720190464",
-  "1342106477019791500",
-  "939266674648027176",
-  "1191418729410609222"
-];
-
-const DEVELOPER_NAME = "Mr Edd (end.is.near_)";
-const joinTimes = new Map();
-
-// ================= READY =================
 client.once("ready", async () => {
-  console.log(`✅ Logged in as ${client.user.tag}`);
-  await registerCommands(client.user.id, BOT_TOKEN);
+
+    console.log(`Logged in as ${client.user.tag}`);
+
+    await registerCommands(
+        client.user.id,
+        TOKEN
+    );
+
 });
+function saveConfig() {
+
+    fs.writeJsonSync(
+        CONFIG,
+        config,
+        {
+            spaces:2
+        }
+    );
+
+}
 
 // ================= SETUP COMMAND =================
-client.on("interactionCreate", async (interaction) => {
 
-  if (!interaction.isChatInputCommand()) return;
+client.on(Events.InteractionCreate, async interaction => {
 
-  if (interaction.commandName === "setup") {
+    if (!interaction.isChatInputCommand()) return;
 
-    if (!interaction.member.permissions.has("Administrator")) {
-      return interaction.reply({ content: "❌ Admin only command.", ephemeral: true });
+    if (interaction.commandName !== "setup") return;
+
+    if (
+        !interaction.member.permissions.has(
+            PermissionsBitField.Flags.Administrator
+        )
+    ) {
+        return interaction.reply({
+            content: "Only admins can use this command.",
+            ephemeral: true
+        });
     }
 
+    const guestRole = interaction.options.getRole("guest_role");
     const verifiedRole = interaction.options.getRole("verified_role");
-    const verifyChannel = interaction.options.getChannel("verify_channel");
-    const logChannel = interaction.options.getChannel("log_channel");
+    const verificationChannel = interaction.options.getChannel("verification_channel");
 
-    configs[interaction.guild.id] = {
-      verifiedRoleId: verifiedRole.id,
-      verifyChannelId: verifyChannel.id,
-      logChannelId: logChannel.id
+    config[interaction.guild.id] = {
+
+        guestRole: guestRole.id,
+        verifiedRole: verifiedRole.id,
+        verificationChannel: verificationChannel.id,
+
+        welcomeChannel:
+            config[interaction.guild.id]?.welcomeChannel || null,
+
+        welcomeMessage:
+            config[interaction.guild.id]?.welcomeMessage || null
+
     };
 
-    await fs.writeJson(CONFIG_PATH, configs, { spaces: 2 });
-    await sendVerificationInstruction(interaction.guild, verifyChannel.id);
-    return interaction.reply({
-      content: "✅ Verification system setup successfully for this server!",
-      ephemeral: false
-    });
-  }
-});
+    saveConfig();
 
-// ================= AUTO ALLIANCE VERIFICATION =================
-const allowedAlliances = [
-  "astral desire",
-  "astral vortex",
-  "astral shogun",
-  "astral origin"
-];
-async function sendVerificationInstruction(guild, channelId) {
+    const row = new ActionRowBuilder().addComponents(
 
-  const guildConfig = configs[guild.id];
-  if (!guildConfig) return;
+        new ButtonBuilder()
+            .setCustomId("verify")
+            .setLabel("✅ Verify Me")
+            .setStyle(ButtonStyle.Success)
 
-  const channel = guild.channels.cache.get(channelId);
-  if (!channel) return;
-
-  // Delete previous instruction message if exists
-  if (guildConfig.instructionMessageId) {
-    try {
-      const oldMsg = await channel.messages.fetch(guildConfig.instructionMessageId);
-      if (oldMsg) await oldMsg.delete();
-    } catch {}
-  }
-
-  const newMsg = await channel.send(
-`📌 **Verification Required**
-
-To get verified, please send a **clear screenshot of your full in-game profile screen**.
-
-Make sure:
-• Alliance name is visible  
-• Bottom profile menu is visible  
-• Screenshot is not cropped  
-• Screenshot is clear and readable  
-
-Once verified, you will receive the Verified role automatically.`
-  );
-
-  guildConfig.instructionMessageId = newMsg.id;
-  await fs.writeJson(CONFIG_PATH, configs, { spaces: 2 });
-}
-
-
-client.on("messageCreate", async (message) => {
-
-  if (message.author.bot) return;
-
-  // AUTO VERIFY SYSTEM
-  if (message.guild) {
-
-    const guildConfig = configs[message.guild.id];
-    if (guildConfig && message.channel.id === guildConfig.verifyChannelId && message.attachments.size === 0) {
-    await message.delete().catch(() => {});
-    return;
-  }
-    if (guildConfig && message.channel.id === guildConfig.verifyChannelId && message.attachments.size > 0) {
-
-      const attachment = message.attachments.first();
-      if (!attachment.contentType?.startsWith("image")) return;
-
-      const member = await message.guild.members.fetch(message.author.id);
-
-      // If already verified → delete screenshot
-      if (member.roles.cache.has(guildConfig.verifiedRoleId)) {
-        await message.delete().catch(() => {});
-        return message.channel.send("⚠️ You are already verified.");
-      }
-
-      const readingMsg = await message.reply("🔍 Reading screenshot... please wait (10-20 sec)");
-
-
-      try {
-        const result = await Tesseract.recognize(attachment.url, "eng");
-        const text = result.data.text.toLowerCase();
-
-        let foundAlliance = null;
-        for (const alliance of allowedAlliances) {
-          if (text.includes(alliance)) {
-            foundAlliance = alliance;
-            break;
-          }
-        }
-
-        if (!foundAlliance) {
-          await readingMsg.delete().catch(() => {});
-          const failMsg = await message.reply(
-  `❌ <@${message.author.id}> Alliance not recognized.
-Make sure full profile screenshot is visible.`
-);
-
-// Delete both screenshot and failure message after 15 minutes
-setTimeout(async () => {
-  await message.delete().catch(() => {});
-  await failMsg.delete().catch(() => {});
-}, 15 * 60 * 600); // 15 minutes
-
-return;
-        }
-
-        // ✅ NEW: UI TEXT CHECK (Stable Method)
-        // Normalize (remove accents for Latin languages)
-function normalize(text) {
-  return text
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase();
-}
-
-const normalizedText = normalize(text);
-
-const requiredUIWords = [
-
-  // ---------- ENGLISH ----------
-  "troops",
-  "settings",
-
-  // ---------- FRENCH ----------
-  "troupes",
-  "reglages",
-  "succes",
-  "commandant",
-  "classements",
-
-  // ---------- GERMAN ----------
-  "truppen",
-  "einstellungen",
-
-  // ---------- SPANISH ----------
-  "tropas",
-  "configuracion",
-
-  // ---------- PORTUGUESE ----------
-  "tropas",
-  "configuracoes",
-
-  // ---------- INDONESIAN ----------
-  "pasukan",
-  "pengaturan",
-
-  // ---------- RUSSIAN ----------
-  "войска",        // troops
-  "настройки",     // settings
-
-  // ---------- VIETNAMESE ----------
-  "quan doi",      // troops
-  "cai dat",       // settings
-
-  // ---------- CHINESE (SIMPLIFIED) ----------
-  "部队",           // troops
-  "设置",           // settings
-
-  // ---------- CHINESE (TRADITIONAL) ----------
-  "部隊",
-  "設定",
-
-  // ---------- KOREAN ----------
-  "부대",           // troops
-  "설정",           // settings
-
-  // ---------- ITALIAN ----------
-  "truppe",
-  "impostazioni",
-
-  // ---------- TURKISH ----------
-  "birlikler",
-  "ayarlar"
-];
-
-let matchCount = 0;
-
-for (const word of requiredUIWords) {
-  if (normalizedText.includes(word)) {
-    matchCount++;
-  }
-}
-
-// Require at least 1 strong UI word
-if (matchCount < 1) {
-  await readingMsg.delete().catch(() => {});
- const failMsg = await message.reply(
-  `❌ <@${message.author.id}> Screenshot must clearly show the bottom profile menu (Troops / Settings icons visible).`
-);
-
-setTimeout(async () => {
-  await message.delete().catch(() => {});
-  await failMsg.delete().catch(() => {});
-}, 15 * 60 * 600);
-
-return;
-}
-
-
-        await member.roles.add(guildConfig.verifiedRoleId);
-
-        const prettyName = foundAlliance
-          .split(" ")
-          .map(w => w.charAt(0).toUpperCase() + w.slice(1))
-          .join(" ");
-
-        await readingMsg.delete().catch(() => {});
-
-
-        // ✅ Delete screenshot after successful verification
-        await message.delete().catch(() => {});
-        await sendVerificationInstruction(message.guild, guildConfig.verifyChannelId);
-
-        const logChannel = message.guild.channels.cache.get(guildConfig.logChannelId);
-        if (logChannel) {
-          logChannel.send(`✅ <@${member.id}> verified as ${prettyName}`);
-        }
-
-      } catch (err) {
-        console.error("OCR Error:", err);
-        await readingMsg.delete().catch(() => {});
-        const failMsg = await message.reply(
-  `⚠️ <@${message.author.id}> Error reading screenshot. Try again with clearer image.`
-);
-
-setTimeout(async () => {
-  await message.delete().catch(() => {});
-  await failMsg.delete().catch(() => {});
-}, 15 * 60 * 500);
-      }
-    }
-  }
-
-  // ================= DM SYSTEM (UNCHANGED) =================
-  if (!message.guild) {
-
-    const msg = message.content.toLowerCase();
-
-    if (msg.includes("verify") || msg.includes("verification")) {
-      return message.channel.send(
-`✅ **How to Get Verified**
-Send your in-game account screenshot here:
-${LINKS.verify}`
-      );
-    }
-
-    if (msg.includes("ticket") || msg.includes("leadership") || msg.includes("contact")) {
-      return message.channel.send(
-`🎫 **Contact Leadership or For anything**
-Open a ticket here:
-${LINKS.ticket}`
-      );
-    }
-
-    if (msg.includes("king")) {
-      const guild = client.guilds.cache.first();
-      const kingNames = await fetchDisplayNames(guild, KING_IDS);
-      return message.channel.send(`👑 **Current Kings**\n${kingNames}`);
-    }
-
-    if (msg.includes("council")) {
-      const guild = client.guilds.cache.first();
-      const councilNames = await fetchDisplayNames(guild, COUNCIL_IDS);
-      return message.channel.send(`🏛️ **Council Members**\n${councilNames}`);
-    }
-
-    if (msg.includes("fort")) {
-      return message.channel.send(`🏰 **Fort Status**\n${LINKS.fort}`);
-    }
-
-    if (msg.includes("announce")) {
-      return message.channel.send(`📢 **Kingdom Announcements**\n${LINKS.announcement}`);
-    }
-
-    if (msg.includes("chat") || msg.includes("talk")) {
-      return message.channel.send(`🗣️ **Kingdom Chat**\n${LINKS.kingdomChat}`);
-    }
-
-    if (msg.includes("resource") || msg.includes("rss")) {
-      return message.channel.send(`💎 **Resources / RSS**\n${LINKS.resource}`);
-    }
-
-    if (msg.includes("suggest")) {
-      return message.channel.send(`💡 **Suggestions**\n${LINKS.suggestion}`);
-    }
-
-    if (msg.includes("developer") || msg.includes("bot")) {
-      return message.channel.send(`👨‍💻 **Bot Developer**\n${DEVELOPER_NAME}`);
-    }
-
-    return message.channel.send(
-`❓ I couldn’t understand that.
-
-You can ask about:
-• verification  
-• ticket / leadership  
-• king / council  
-• fort status  
-• resources  
-• announcements  
-
-Or ask here:
-${LINKS.question}`
     );
-  }
+
+    await verificationChannel.send({
+
+        embeds: [
+
+            {
+
+                color: 0x2ecc71,
+
+                title: "Verification",
+
+                description:
+                    "Welcome!\n\nClick the **Verify Me** button below to gain full access to the server."
+
+            }
+
+        ],
+
+        components: [row]
+
+    });
+
+    interaction.reply({
+
+        content: "✅ Setup completed successfully.",
+
+        ephemeral: true
+
+    });
+
 });
+client.on(Events.InteractionCreate,async interaction=>{
 
-// ================= WELCOME DM (UNCHANGED) =================
-client.on("guildMemberAdd", async (member) => {
-  const username = member.displayName;
-  joinTimes.set(member.id, Date.now());
+    if(!interaction.isChatInputCommand()) return;
 
-  try {
-    await member.send(`**📩 Welcome & Verification Guidelines**
+    if(interaction.commandName!=="welcome") return;
 
-Hello **${username}**, Welcome to Kingdom 3961 Server 👋
+    if(
+        !interaction.member.permissions.has(
+            PermissionsBitField.Flags.Administrator
+        )
+    ){
 
-To ensure smooth coordination and discipline, please follow the steps below:
+        return interaction.reply({
 
-**📜 Step 1: Read the Rules**
-Before participating, you must read and understand our rules.
-➡️ Rules Channel: https://discord.com/channels/1447945093410717790/1447962379718492284
-Failure to follow the rules may lead to warnings or removal.
+            content:"Only admins can use this.",
 
-**✅ Step 2: Verification Required**
-To get full access to the server, you need to verify yourself.
-➡️ Verification Channel: https://discord.com/channels/1447945093410717790/1448330472361951333
-📸 Please send a screenshot/image of your in-game account as instructed.
-Once verified, you will receive the Verified role and unlock all alliance channels.
+            ephemeral:true
 
-**⚠️ Important Notes**
-• Do not DM staff unless instructed
-• Follow leadership directions at all times
-• Leaks, spying, or rule violations are strictly punished
+        });
 
-If you have questions, wait until verification is complete.
-— Kingdom 3961 Leadership`);
-  } catch {}
-});
-
-// ================= VERIFIED ROLE DM (UNCHANGED) =================
-client.on("guildMemberUpdate", async (oldMember, newMember) => {
-
-  const guildConfig = configs[newMember.guild.id];
-  if (!guildConfig) return;
-
-  if (
-    !oldMember.roles.cache.has(guildConfig.verifiedRoleId) &&
-    newMember.roles.cache.has(guildConfig.verifiedRoleId)
-  ) {
-
-    joinTimes.delete(newMember.id);
-
-    const username = newMember.displayName;
-
-    try {
-      await newMember.send(`**🎉 Congratulations ${username}!**
-You are now VERIFIED and have full access to the server.
-Please take a moment to familiarize yourself with the important channels below:
-
-**📢 Announcement Channel  **
-All important kingdom notices, war instructions, deadlines, and leadership announcements will be posted here.  
-⚠️ This channel is mandatory to follow.  
-https://discord.com/channels/1447945093410717790/1447962520026484736
-
-**🗣️ Kingdom Chat**
-For kingdom-wide discussions and important updates.  
-https://discord.com/channels/1447945093410717790/1447945095037976731
-
-**🎫 Ticket Channel  **
-Use this channel to report issues, raise complaints, or contact staff.  
-https://discord.com/channels/1447945093410717790/1448391461719642262
-
-**🏰 Fort Status ** 
-Check current status of how many forts you did.  
-https://discord.com/channels/1447945093410717790/1448316740147744918
-
-**💎 Resource Seller  **
-For buying in-game resources.  
-https://discord.com/channels/1447945093410717790/1448391436247498802
-
-**🛒 Account Buying  **
-Use this channel for account buying/selling discussions (follow rules strictly).  
-https://discord.com/channels/1447945093410717790/1449084442319650826
-
-**🧑‍✈️ Pilots  **
-Find trusted pilots or offer piloting services as per kingdom rules.  
-https://discord.com/channels/1447945093410717790/1449084662839513231
-
-Please ensure you follow all alliance and kingdom rules while using these channels.
-
-Welcome Again,
-— Kingdom 3961 Leadership`);
-    } catch {}
-  }
-});
-
-async function fetchDisplayNames(guild, ids) {
-  const names = [];
-  for (const id of ids) {
-    try {
-      const member = await guild.members.fetch(id);
-      names.push(member.displayName);
-    } catch {
-      names.push("Unknown");
     }
-  }
-  return names.join("\n");
-}
 
-client.login(BOT_TOKEN);
+    const channel=
+    interaction.options.getChannel("welcome_channel");
+
+    if(!config[interaction.guild.id])
+        config[interaction.guild.id]={};
+
+    config[interaction.guild.id].welcomeChannel=channel.id;
+
+    saveConfig();
+
+    const modal=new ModalBuilder()
+
+    .setCustomId("welcome_modal")
+
+    .setTitle("Welcome Message");
+
+    const input=new TextInputBuilder()
+
+    .setCustomId("welcome_message")
+
+    .setLabel("Type your custom welcome message")
+
+    .setStyle(TextInputStyle.Paragraph)
+
+    .setRequired(true);
+
+    modal.addComponents(
+
+        new ActionRowBuilder()
+
+        .addComponents(input)
+
+    );
+
+    await interaction.showModal(modal);
+
+});
+
+client.on(Events.InteractionCreate,async interaction=>{
+
+    if(!interaction.isModalSubmit()) return;
+
+    if(interaction.customId!=="welcome_modal")
+        return;
+
+    const msg=
+
+    interaction.fields.getTextInputValue(
+        "welcome_message"
+    );
+
+    config[interaction.guild.id].welcomeMessage=msg;
+
+    saveConfig();
+
+    interaction.reply({
+
+        content:"Welcome message saved successfully.",
+
+        ephemeral:true
+
+    });
+
+});
+
+// ================= BUTTON VERIFY =================
+
+client.on(Events.InteractionCreate, async interaction => {
+
+    if (!interaction.isButton()) return;
+
+    if (interaction.customId !== "verify") return;
+
+    const guildConfig = config[interaction.guild.id];
+
+    if (!guildConfig) {
+        return interaction.reply({
+            content: "Server is not setup yet.",
+            ephemeral: true
+        });
+    }
+
+    const member = interaction.member;
+
+    try {
+
+        const verifiedRole = interaction.guild.roles.cache.get(guildConfig.verifiedRole);
+
+        const guestRole = interaction.guild.roles.cache.get(guildConfig.guestRole);
+
+        if (!verifiedRole) {
+
+            return interaction.reply({
+
+                content: "Verified role not found.",
+
+                ephemeral: true
+
+            });
+
+        }
+
+        if (member.roles.cache.has(verifiedRole.id)) {
+
+            return interaction.reply({
+
+                content: "You are already verified.",
+
+                ephemeral: true
+
+            });
+
+        }
+
+        await member.roles.add(verifiedRole);
+
+        if (guestRole) {
+
+            await member.roles.remove(guestRole).catch(() => {});
+
+        }
+
+        await interaction.reply({
+
+            content:
+                "🎉 You have been verified successfully!\n\nYou now have full access to the server.\nEnjoy!",
+
+            ephemeral: true
+
+        });
+
+    } catch (err) {
+
+        console.log(err);
+
+        interaction.reply({
+
+            content: "Something went wrong.",
+
+            ephemeral: true
+
+        });
+
+    }
+
+});
+
+// ================= MEMBER JOIN =================
+
+client.on(Events.GuildMemberAdd, async member => {
+
+    const guildConfig = config[member.guild.id];
+
+    if (!guildConfig) return;
+
+    try {
+
+        const guestRole = member.guild.roles.cache.get(guildConfig.guestRole);
+
+        if (guestRole) {
+
+            await member.roles.add(guestRole);
+
+        }
+
+        const welcomeChannel = member.guild.channels.cache.get(
+            guildConfig.welcomeChannel
+        );
+
+        if (welcomeChannel) {
+
+            let message =
+                guildConfig.welcomeMessage ||
+                "Welcome {user}!";
+
+            message = message
+                .replace("{user}", `<@${member.id}>`)
+                .replace("{username}", member.user.username)
+                .replace("{server}", member.guild.name);
+
+            await welcomeChannel.send(message);
+
+        }
+
+    } catch (err) {
+
+        console.log(err);
+
+    }
+
+});
+client.login(TOKEN);
