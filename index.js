@@ -126,8 +126,15 @@ client.on(Events.InteractionCreate, async interaction => {
                 title: "Verification",
 
                 description:
-                    "Welcome!\n\nClick the **Verify Me** button below to gain full access to the server."
-
+"Thank you for joining our community!\n\n" +
+"To unlock full access to the server, simply click the **✅ Verify Me** button below.\n\n" +
+"Once verified, you'll be able to:\n" +
+"• 🔓 Access all server channels\n" +
+"• 💬 Participate in community discussions\n" +
+"• 📢 Receive important announcements\n" +
+"• 🎉 Enjoy all member-exclusive features\n\n" +
+"If you encounter any issues during verification, please contact a member of our staff.\n\n" +
+"**Click the button below to get started!** 🚀"
             }
 
         ],
